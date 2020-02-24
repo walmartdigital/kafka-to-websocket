@@ -1,19 +1,28 @@
-package main
+package kafka
 
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/segmentio/kafka-go"
 )
 
-func mainConsumer(kafkaURL string) {
+// Params to initiate kafka consumer
+type Params struct {
+	GroupID string
+	Topic   string
+	Brokers string
+}
+
+// Run the kafka consumer
+func Run(params *Params) {
 	fmt.Println("initializing consumer...")
 
 	r := kafka.NewReader(kafka.ReaderConfig{
-		Brokers:  []string{kafkaURL},
-		GroupID:  "kafka-poc-group",
-		Topic:    topic,
+		Brokers:  strings.Split(params.Brokers, ","),
+		GroupID:  params.GroupID,
+		Topic:    params.Topic,
 		MinBytes: 10e3, // 10KB
 		MaxBytes: 10e6, // 10MB
 	})
