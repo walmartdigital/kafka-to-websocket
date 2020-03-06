@@ -1,12 +1,19 @@
-package websocket
+package server
 
 import (
 	"fmt"
 	"log"
 	"net/http"
 	"text/template"
+	"time"
 
 	"github.com/gorilla/websocket"
+)
+
+const (
+	writeWait  = 10 * time.Second
+	pongWait   = 5 * time.Second
+	pingPeriod = pongWait * 9 / 10
 )
 
 var upgrader = websocket.Upgrader{} // use default options
@@ -16,35 +23,35 @@ type Params struct {
 	Addr string
 }
 
+type server struct {
+	hub *hub
+}
+
 // Run a websocket server
-func Run(params *Params) {
+func Run(params *Params, c chan []byte) {
 	fmt.Println("initializing websocket...")
 
-	http.HandleFunc("/echo", echo)
+	s := &server{
+		createHub(c),
+	}
+
+	http.HandleFunc("/echo", s.echo)
 	http.HandleFunc("/", home)
 	log.Fatal(http.ListenAndServe(params.Addr, nil))
 }
 
-func echo(w http.ResponseWriter, r *http.Request) {
-	c, err := upgrader.Upgrade(w, r, nil)
+func (s *server) echo(w http.ResponseWriter, r *http.Request) {
+	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Print("upgrade:", err)
 		return
 	}
-	defer c.Close()
-	for {
-		mt, message, err := c.ReadMessage()
-		if err != nil {
-			log.Println("read:", err)
-			break
-		}
-		log.Printf("recv: %s", message)
-		err = c.WriteMessage(mt, message)
-		if err != nil {
-			log.Println("write:", err)
-			break
-		}
-	}
+
+	conn := createConn(ws)
+	s.hub.addDestination(conn.id, conn.channel)
+	conn.setCloseHandler(func() {
+		s.hub.removeDestination(conn.id)
+	})
 }
 
 func home(w http.ResponseWriter, r *http.Request) {

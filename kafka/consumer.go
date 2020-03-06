@@ -16,7 +16,7 @@ type Params struct {
 }
 
 // Run the kafka consumer
-func Run(params *Params) {
+func Run(params *Params, c chan []byte) {
 	fmt.Println("initializing consumer...")
 
 	r := kafka.NewReader(kafka.ReaderConfig{
@@ -32,7 +32,7 @@ func Run(params *Params) {
 		if err != nil {
 			break
 		}
-		fmt.Printf("message at topic/partition/offset %v/%v/%v: %s = %s\n", m.Topic, m.Partition, m.Offset, string(m.Key), string(m.Value))
+		c <- m.Value
 	}
 
 	r.Close()

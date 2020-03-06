@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/seadiaz/kafka-to-websocket/kafka"
-	"github.com/seadiaz/kafka-to-websocket/websocket"
+	server "github.com/seadiaz/kafka-to-websocket/websocket"
 	"github.com/spf13/cobra"
 )
 
@@ -37,10 +37,11 @@ func executeRootCommand(cmd *cobra.Command, _ []string) {
 		GroupID: cmd.Flag("group-id").Value.String(),
 		Topic:   cmd.Flag("topic").Value.String(),
 	}
-	go kafka.Run(paramsKafka)
+	c := make(chan []byte)
+	go kafka.Run(paramsKafka, c)
 
-	paramsWebsocket := &websocket.Params{
+	paramsWebsocket := &server.Params{
 		Addr: cmd.Flag("addr").Value.String(),
 	}
-	websocket.Run(paramsWebsocket)
+	server.Run(paramsWebsocket, c)
 }
