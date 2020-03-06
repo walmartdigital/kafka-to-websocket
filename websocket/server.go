@@ -20,7 +20,8 @@ var upgrader = websocket.Upgrader{} // use default options
 
 // Params for a websocket server
 type Params struct {
-	Addr string
+	Addr     string
+	BasePath string
 }
 
 type server struct {
@@ -35,8 +36,8 @@ func Run(params *Params, c chan []byte) {
 		createHub(c),
 	}
 
-	http.HandleFunc("/echo", s.echo)
-	http.HandleFunc("/", home)
+	http.HandleFunc(params.BasePath+"/echo", s.echo)
+	http.HandleFunc(params.BasePath+"/", home)
 	log.Fatal(http.ListenAndServe(params.Addr, nil))
 }
 

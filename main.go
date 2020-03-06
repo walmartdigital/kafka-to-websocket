@@ -22,7 +22,8 @@ func init() {
 	rootCmd.Flags().StringP("brokers", "b", "localhost:9092", "list of brokers separated by comma")
 	rootCmd.Flags().StringP("group-id", "g", "k2w", "name of the kafka group id")
 	rootCmd.Flags().StringP("topic", "t", "", "topic from to consume messages")
-	rootCmd.Flags().StringP("addr", "a", "localhost:8000", "address to listen websocket connection")
+	rootCmd.Flags().StringP("addr", "a", "localhost:8000", "address to listen websocket server")
+	rootCmd.Flags().StringP("base-path", "p", "", "base path for websocket server")
 
 	rootCmd.MarkFlagRequired("topic")
 }
@@ -41,7 +42,8 @@ func executeRootCommand(cmd *cobra.Command, _ []string) {
 	go kafka.Run(paramsKafka, c)
 
 	paramsWebsocket := &server.Params{
-		Addr: cmd.Flag("addr").Value.String(),
+		Addr:     cmd.Flag("addr").Value.String(),
+		BasePath: cmd.Flag("base-path").Value.String(),
 	}
 	server.Run(paramsWebsocket, c)
 }
