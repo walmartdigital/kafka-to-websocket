@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/segmentio/kafka-go"
+	_ "github.com/segmentio/kafka-go/snappy"
 )
 
 // Params to initiate kafka consumer
