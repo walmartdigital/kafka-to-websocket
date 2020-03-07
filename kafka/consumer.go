@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/segmentio/kafka-go"
+	_ "github.com/segmentio/kafka-go/gzip"
+	_ "github.com/segmentio/kafka-go/lz4"
 	_ "github.com/segmentio/kafka-go/snappy"
 )
 
