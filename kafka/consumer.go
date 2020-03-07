@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/segmentio/kafka-go"
 )
@@ -24,16 +25,29 @@ func Run(params *Params, c chan []byte) {
 		GroupID:  params.GroupID,
 		Topic:    params.Topic,
 		MinBytes: 10e3, // 10KB
-		MaxBytes: 10e6, // 10MB
+		MaxBytes: 10e6, // 10MB,
+		MaxWait:  5 * time.Second,
 	})
+
+	go printStats(r)
 
 	for {
 		m, err := r.ReadMessage(context.Background())
 		if err != nil {
+			fmt.Printf("error reading message: %s\n", err.Error())
 			break
 		}
 		c <- m.Value
+		fmt.Printf("message received: %s\n", string(m.Value))
 	}
 
 	r.Close()
+	Run(params, c)
+}
+
+func printStats(r *kafka.Reader) {
+	for {
+		fmt.Println(r.Stats())
+		time.Sleep(5 * time.Second)
+	}
 }
