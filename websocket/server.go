@@ -25,7 +25,8 @@ type Params struct {
 }
 
 type server struct {
-	hub *hub
+	hub      *hub
+	basePath string
 }
 
 // Run a websocket server
@@ -34,10 +35,11 @@ func Run(params *Params, c chan []byte) {
 
 	s := &server{
 		createHub(c),
+		params.BasePath,
 	}
 
 	http.HandleFunc(params.BasePath+"/echo", s.echo)
-	http.HandleFunc(params.BasePath+"/", home)
+	http.HandleFunc(params.BasePath+"/", s.home)
 	log.Fatal(http.ListenAndServe(params.Addr, nil))
 }
 
@@ -55,8 +57,8 @@ func (s *server) echo(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func home(w http.ResponseWriter, r *http.Request) {
-	homeTemplate.Execute(w, "ws://"+r.Host+"/echo")
+func (s *server) home(w http.ResponseWriter, r *http.Request) {
+	homeTemplate.Execute(w, "ws://"+r.Host+s.basePath+"/echo")
 }
 
 var homeTemplate = template.Must(template.New("").Parse(`
