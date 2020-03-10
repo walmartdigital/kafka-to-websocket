@@ -4,6 +4,7 @@ import (
 	"github.com/seadiaz/kafka-to-websocket/kafka"
 	server "github.com/seadiaz/kafka-to-websocket/websocket"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var (
@@ -26,6 +27,9 @@ func init() {
 	rootCmd.Flags().StringP("base-path", "p", "", "base path for websocket server")
 
 	rootCmd.MarkFlagRequired("topic")
+
+	viper.SetEnvPrefix("k2w")
+	viper.AutomaticEnv()
 }
 
 func main() {
@@ -44,6 +48,8 @@ func executeRootCommand(cmd *cobra.Command, _ []string) {
 	paramsWebsocket := &server.Params{
 		Addr:     cmd.Flag("addr").Value.String(),
 		BasePath: cmd.Flag("base-path").Value.String(),
+		HTTPUser: viper.GetString("HTTP_USER"),
+		HTTPPass: viper.GetString("HTTP_PASS"),
 	}
 	server.Run(paramsWebsocket, c)
 }
