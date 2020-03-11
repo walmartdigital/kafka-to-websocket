@@ -42,17 +42,25 @@ func Run(params *Params, c chan []byte) {
 		params.BasePath,
 	}
 
-	mux := goji.NewMux()
-	if params.HTTPUser != "" && params.HTTPPass != "" {
-		fmt.Println("basic auth enabled")
-		mux.Use(httpauth.SimpleBasicAuth(params.HTTPUser, params.HTTPPass))
-	}
-	mux.HandleFunc(pat.Get(params.BasePath+"/watch"), s.echo)
+	rootMux := goji.NewMux()
+	watchMux := s.createWatchMux(params.HTTPUser, params.HTTPPass)
+	rootMux.HandleFunc(pat.Get(params.BasePath+"/health"), s.health)
+	rootMux.Handle(pat.New(params.BasePath+"/*"), watchMux)
 
-	log.Fatal(http.ListenAndServe(params.Addr, mux))
+	log.Fatal(http.ListenAndServe(params.Addr, rootMux))
 }
 
-func (s *server) echo(w http.ResponseWriter, r *http.Request) {
+func (s *server) createWatchMux(user, pass string) *goji.Mux {
+	mux := goji.SubMux()
+	if user != "" && pass != "" {
+		fmt.Println("basic auth enabled")
+		mux.Use(httpauth.SimpleBasicAuth(user, pass))
+	}
+	mux.HandleFunc(pat.Get("/watch"), s.watch)
+	return mux
+}
+
+func (s *server) watch(w http.ResponseWriter, r *http.Request) {
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Print("upgrade:", err)
@@ -64,4 +72,9 @@ func (s *server) echo(w http.ResponseWriter, r *http.Request) {
 	conn.setCloseHandler(func() {
 		s.hub.removeDestination(conn.id)
 	})
+}
+
+func (s *server) health(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "application/json")
+	fmt.Fprintf(w, "{\"status\":\"up\"}")
 }
